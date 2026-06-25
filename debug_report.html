@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 樂器與人聲辨識網站：Debug 過程展示</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --ink: #18202a;
+      --muted: #657386;
+      --line: #d9e1ec;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #b45309;
+      --code: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.7;
+    }
+
+    header {
+      padding: 48px 24px 32px;
+      background: linear-gradient(135deg, #172554, #312e81);
+      color: #ffffff;
+    }
+
+    header .inner,
+    main {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(30px, 5vw, 52px);
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    header p {
+      margin: 0;
+      max-width: 860px;
+      color: #dbeafe;
+      font-size: 18px;
+    }
+
+    main {
+      padding: 32px 0 64px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 26px;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 20px;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    .notice {
+      padding: 16px 18px;
+      border-left: 5px solid var(--blue);
+      background: #eff6ff;
+      border-radius: 8px;
+      margin: 12px 0;
+    }
+
+    .success {
+      padding: 14px 16px;
+      border-left: 5px solid var(--green);
+      background: #ecfdf3;
+      border-radius: 8px;
+      margin-top: 14px;
+      color: #14532d;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #eef2ff;
+      color: #1e3a8a;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .case {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 18px;
+      background: #fbfdff;
+    }
+
+    .case-title {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .code-card {
+      min-width: 0;
+    }
+
+    .code-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--amber);
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      border-radius: 10px;
+      background: var(--code);
+      color: #e5e7eb;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 20px 0 40px;
+    }
+
+    @media (max-width: 820px) {
+      .code-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="inner">
+      <h1>🛠️ AI 樂器與人聲辨識網站：Debug 過程展示</h1>
+      <p>本頁整理專題開發過程中遇到的主要問題、原因分析、修改前後程式碼，以及最後解決結果，可用於期末報告的「實驗與 Bug 日誌」章節。</p>
+    </div>
+  </header>
+
+  <main>
+    <nav aria-label="頁面導覽">
+      <a href="#goal">實驗目標</a>
+      <a href="#overview">Debug 總覽</a>
+      <a href="#cases">詳細案例</a>
+      <a href="#tools">Debug 工具</a>
+      <a href="#conclusion">實驗結論</a>
+    </nav>
+
+    <section id="goal">
+      <h2>1. 實驗目標</h2>
+      <div class="notice">
+        本專題目標是建立一個可分析 MP3/WAV 與 YouTube 音訊的 AI 網站，透過 YAMNet 模型辨識樂器與人聲，並顯示信心度、可信度與明顯出現秒數。
+      </div>
+    </section>
+
+    <section id="overview">
+      <h2>2. Debug 總覽</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>問題</th>
+            <th>主要原因</th>
+            <th>解決結果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>樂器存在但沒有被顯示</td>
+            <td>早期版本只顯示 Top 3，部分樂器可能被排除。</td>
+            <td>移除 Top 3 限制，顯示所有超過 5% 門檻的項目。</td>
+          </tr>
+          <tr>
+            <td>鼓與 Bass 類別太分散</td>
+            <td>YAMNet 會輸出 Drum kit、Snare drum、Hi-hat 等細項。</td>
+            <td>建立合併分類，將鼓類統一成「鼓」、Bass 類統一成「Bass」。</td>
+          </tr>
+          <tr>
+            <td>鼓的信心度被低估</td>
+            <td>鼓分數被分散在多個原始類別中。</td>
+            <td>將合併類別分數加總，最高封頂 100%。</td>
+          </tr>
+          <tr>
+            <td>YouTube 音訊無法分析</td>
+            <td>下載格式可能是 mp4 或 webm，librosa 不一定能讀取。</td>
+            <td>加入 imageio-ffmpeg，下載後轉成 wav。</td>
+          </tr>
+          <tr>
+            <td>同一首歌分析結果不同</td>
+            <td>YouTube 搜尋可能找到不同版本，且早期固定只分析前 90 秒。</td>
+            <td>新增 YouTube 連結模式與分析長度設定。</td>
+          </tr>
+          <tr>
+            <td>網站無法開啟</td>
+            <td>Streamlit 伺服器沒有啟動。</td>
+            <td>重新啟動 Streamlit 後，localhost 可正常連線。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="cases">
+      <h2>3. 詳細 Debug 紀錄</h2>
+
+      <article class="case">
+        <span class="case-title">Debug 1</span>
+        <h3>樂器存在但沒有被顯示</h3>
+        <p><strong>問題描述：</strong>測試音檔時，使用者認為有鋼琴、鼓或 Bass，但網站沒有顯示出來。</p>
+        <p><strong>原因分析：</strong>早期版本只顯示 Top 3，若樂器排名在第 4 名以後，或低於 5% 門檻，就不會出現在畫面上。</p>
+        <div class="code-grid">
+          <div class="code-card">
+            <strong>修改前</strong>
+            <pre><code>if len(visible_results) == 3:
+    break</code></pre>
+          </div>
+          <div class="code-card">
+            <strong>修改後</strong>
+            <pre><code>if score &lt; CONFIDENCE_THRESHOLD:
+    continue
+
+visible_results.append((display_name, score, sources, active_times))</code></pre>
+          </div>
+        </div>
+        <div class="success">結果：移除 Top 3 限制後，所有超過 5% 信心度門檻的樂器與人聲都會被列出。</div>
+      </article>
+
+      <article class="case">
+        <span class="case-title">Debug 2</span>
+        <h3>鼓與 Bass 類別太分散</h3>
+        <p><strong>問題描述：</strong>YAMNet 會把鼓拆成 Drum kit、Snare drum、Hi-hat、Bass drum 等細項，導致結果太雜。</p>
+        <p><strong>原因分析：</strong>YAMNet 是通用聲音分類模型，會輸出 AudioSet 原始英文類別，不一定符合一般使用者的音樂理解。</p>
+        <div class="code-grid">
+          <div class="code-card">
+            <strong>修改前</strong>
+            <pre><code># 早期可能直接顯示模型原始類別
+Drum kit
+Snare drum
+Hi-hat
+Bass drum
+Bass guitar</code></pre>
+          </div>
+          <div class="code-card">
+            <strong>修改後</strong>
+            <pre><code>DRUM_CLASSES = {
+    "Bass drum",
+    "Cymbal",
+    "Drum",
+    "Drum kit",
+    "Hi-hat",
+    "Percussion",
+    "Snare drum",
+}
+
+BASS_CLASSES = {
+    "Bass guitar",
+    "Double bass",
+}
+
+def get_display_name(class_name):
+    if class_name in DRUM_CLASSES:
+        return "🥁 鼓"
+
+    if class_name in BASS_CLASSES:
+        return "🎸 Bass"</code></pre>
+          </div>
+        </div>
+        <div class="success">結果：鼓類統一顯示為「🥁 鼓」，Bass 類統一顯示為「🎸 Bass」，結果更容易理解。</div>
+      </article>
+
+      <article class="case">
+        <span class="case-title">Debug 3</span>
+        <h3>鼓的信心度被低估</h3>
+        <p><strong>問題描述：</strong>使用者認為鼓很明顯，但系統顯示的鼓分數偏低。</p>
+        <p><strong>原因分析：</strong>鼓的分數被分散在 Drum kit、Snare drum、Hi-hat、Cymbal 等多個類別中，單看任何一個類別都可能不高。</p>
+        <div class="code-grid">
+          <div class="code-card">
+            <strong>修改前</strong>
+            <pre><code># 修改前只取最高的一個來源類別
+score = sources[0][1]</code></pre>
+          </div>
+          <div class="code-card">
+            <strong>修改後</strong>
+            <pre><code># 修改後將合併類別的來源分數加總，最高封頂 100%
+score = min(sum(source_score for _, source_score, _ in sources), 1.0)</code></pre>
+          </div>
+        </div>
+        <div class="success">結果：鼓、Bass、人聲這類合併項目會用整體分數呈現，較符合實際聽感。</div>
+      </article>
+
+      <article class="case">
+        <span class="case-title">Debug 4</span>
+        <h3>YouTube 音訊無法分析</h3>
+        <p><strong>問題描述：</strong>加入 YouTube 搜尋後，網站顯示「YouTube 搜尋或分析時發生錯誤」。</p>
+        <p><strong>原因分析：</strong>yt-dlp 下載的音訊可能是 mp4 或 webm，librosa 不一定能穩定讀取。</p>
+        <div class="code-grid">
+          <div class="code-card">
+            <strong>修改前</strong>
+            <pre><code>ydl_opts = {
+    "format": "bestaudio/best",
+    "outtmpl": f"{YOUTUBE_AUDIO_PREFIX}.%(ext)s",
+}</code></pre>
+          </div>
+          <div class="code-card">
+            <strong>修改後</strong>
+            <pre><code>ydl_opts = {
+    "format": "bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio/best",
+    "outtmpl": f"{YOUTUBE_AUDIO_PREFIX}.%(ext)s",
+    "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
+    "postprocessors": [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "wav",
+        }
+    ],
+}</code></pre>
+          </div>
+        </div>
+        <div class="success">結果：YouTube 音訊會先轉成 wav，再進入 YAMNet 分析流程，分析穩定性提升。</div>
+      </article>
+
+      <article class="case">
+        <span class="case-title">Debug 5</span>
+        <h3>同一首歌分析結果不同</h3>
+        <p><strong>問題描述：</strong>同樣輸入「私奔到月球」，YouTube 分析結果與上傳音檔不同。</p>
+        <p><strong>原因分析：</strong>YouTube 搜尋可能找到 MV、Live、Cover 或歌詞版，而且早期固定只分析前 90 秒。</p>
+        <div class="code-grid">
+          <div class="code-card">
+            <strong>修改前</strong>
+            <pre><code># 修改前：只靠搜尋第一個結果，且固定分析前 90 秒
+search_result = ydl.extract_info(f"ytsearch1:{search_text}", download=True)
+MAX_ANALYSIS_SECONDS = 90</code></pre>
+          </div>
+          <div class="code-card">
+            <strong>修改後</strong>
+            <pre><code>analysis_duration = st.selectbox(
+    "選擇分析長度",
+    ["90 秒", "30 秒", "全曲"],
+    index=0,
+)
+
+youtube_input_mode = st.radio(
+    "YouTube 來源方式",
+    ["搜尋名稱", "貼上 YouTube 連結"],
+    horizontal=True,
+)</code></pre>
+          </div>
+        </div>
+        <div class="success">結果：使用者可以貼指定 YouTube 連結，也能選擇 30 秒、90 秒或全曲分析。</div>
+      </article>
+
+      <article class="case">
+        <span class="case-title">Debug 6</span>
+        <h3>網站無法開啟</h3>
+        <p><strong>問題描述：</strong>瀏覽器出現 localhost 拒絕連線，無法開啟網站。</p>
+        <p><strong>原因分析：</strong>Streamlit 伺服器沒有啟動，並不是 app.py 語法錯誤。</p>
+        <div class="code-grid">
+          <div class="code-card">
+            <strong>修改前</strong>
+            <pre><code># 瀏覽器開啟：
+http://localhost:8501
+
+# 但沒有 Streamlit process 在背景執行</code></pre>
+          </div>
+          <div class="code-card">
+            <strong>修改後</strong>
+            <pre><code>C:\Users\maxki\AppData\Local\Programs\Python\Python313\python.exe -m streamlit run app.py</code></pre>
+          </div>
+        </div>
+        <div class="success">結果：重新啟動 Streamlit 後，localhost:8501 可以正常連線。</div>
+      </article>
+    </section>
+
+    <section id="tools">
+      <h2>4. Debug 工具設計</h2>
+      <p>除了修正主要問題，專題也加入原始分數除錯區，讓使用者能看到 YAMNet 背後的原始類別分數。</p>
+      <pre><code>DEBUG_CLASSES = [
+    "Speech",
+    "Singing",
+    "Vocal music",
+    "Bass guitar",
+    "Double bass",
+    "Drum",
+    "Drum kit",
+    "Snare drum",
+    "Hi-hat",
+    "Cymbal",
+    "Percussion",
+]
+
+def get_debug_scores(peak_scores, class_names):
+    score_by_class = {
+        class_name: float(peak_scores[index])
+        for index, class_name in enumerate(class_names)
+    }
+
+    return [
+        (class_name, score_by_class[class_name])
+        for class_name in DEBUG_CLASSES
+        if class_name in score_by_class
+    ]</code></pre>
+    </section>
+
+    <section id="conclusion">
+      <h2>5. 實驗結論</h2>
+      <p>本專題的 Debug 過程顯示，AI 應用不只是把模型接上網站，還需要處理資料格式、分類轉譯、錯誤提示與使用者理解問題。透過這些修正，網站從單純辨識工具，逐步變成可以解釋結果、讓使用者驗證判斷依據的音樂分析輔助平台。</p>
+    </section>
+  </main>
+
+  <footer>
+    AI 樂器與人聲辨識網站 Debug 展示頁
+  </footer>
+</body>
+</html>
